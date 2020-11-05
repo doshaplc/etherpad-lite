@@ -8,7 +8,7 @@ networks:
 
 services:
   etherpad:
-    image: fuerst/etherpad
+    image: fuerst/etherpad-lite
     restart: always
     ports:
       - 9001
