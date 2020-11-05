@@ -19,7 +19,7 @@ RUN apt install -y libreoffice
 # EXAMPLE:
 #   ETHERPAD_PLUGINS="ep_codepad ep_author_neat"
 ARG ETHERPAD_PLUGINS="ep_headings2 ep_markdown ep_comments_page \
-                      ep_timesliderdiff ep_adminpads ep_hash_auth ep_tables4"
+                      ep_adminpads2 ep_hash_auth ep_tables4"
 
 # By default, Etherpad container is built and run in "production" mode. This is
 # leaner (development dependencies are not installed) and runs faster (among
