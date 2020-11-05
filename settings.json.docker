@@ -178,9 +178,9 @@
    * https://www.npmjs.com/package/ueberdb2
    */
 
-  "dbType": "${DB_TYPE:dirty}",
+  "dbType": "${DB_TYPE:redis}",
   "dbSettings": {
-    "host":     "${DB_HOST}",
+    "host":     "${DB_HOST:redis}",
     "port":     "${DB_PORT}",
     "database": "${DB_NAME}",
     "user":     "${DB_USER}",
@@ -291,7 +291,7 @@
    * LibreOffice can be used in lieu of Abiword to export pads.
    * Setting it to null disables LibreOffice exporting.
    */
-  "soffice": "${SOFFICE}",
+  "soffice": "${SOFFICE:/usr/bin/soffice}",
 
   /*
    * Path to the Tidy executable.

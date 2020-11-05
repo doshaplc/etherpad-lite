@@ -1,11 +1,16 @@
 # Etherpad Lite Dockerfile
 #
-# https://github.com/ether/etherpad-lite
+# Includes LibreOffice and some useful EP plugins.
 #
-# Author: muxator
+# Based on https://github.com/ether/etherpad-lite
+#
+FROM node:14-buster-slim
+LABEL maintainer="Bernhard Fürst, https://github.com/fuerst/etherpad-lite"
 
-FROM node:10-buster-slim
-LABEL maintainer="Etherpad team, https://github.com/ether/etherpad-lite"
+RUN apt update
+# libreoffice > JRE will fail to install without /usr/share/man/man1
+RUN mkdir -p /usr/share/man/man1
+RUN apt install -y libreoffice
 
 # plugins to install while building the container. By default no plugins are
 # installed.
@@ -13,7 +18,8 @@ LABEL maintainer="Etherpad team, https://github.com/ether/etherpad-lite"
 #
 # EXAMPLE:
 #   ETHERPAD_PLUGINS="ep_codepad ep_author_neat"
-ARG ETHERPAD_PLUGINS=
+ARG ETHERPAD_PLUGINS="ep_headings2 ep_markdown ep_comments_page \
+                      ep_timesliderdiff ep_adminpads ep_hash_auth ep_tables4"
 
 # By default, Etherpad container is built and run in "production" mode. This is
 # leaner (development dependencies are not installed) and runs faster (among
@@ -36,6 +42,7 @@ COPY --chown=etherpad:0 ./ ./
 
 # install node dependencies for Etherpad
 RUN bin/installDeps.sh && \
+  npm install bcrypt && \
 	rm -rf ~/.npm/_cacache
 
 # Install the plugins, if ETHERPAD_PLUGINS is not empty.

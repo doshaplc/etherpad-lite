@@ -10,6 +10,12 @@ Etherpad is a real-time collaborative editor scalable to thousands of simultaneo
 
 **[Try it out](https://video.etherpad.com)**
 
+Includes 
+
+* LibreOffice for enhanced export capabilities (DOC, PDF).
+* Etherpad plugins: ep_headings2, ep_markdown, ep_comments_page, ep_timesliderdiff, ep_adminpads, ep_hash_auth, ep_tables4.
+* `docker-compose.yml` to start an Etherpad instance using Redis as backend.
+
 # Installation
 
 ## Requirements

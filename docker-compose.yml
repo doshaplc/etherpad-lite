@@ -1,0 +1,29 @@
+version: "3"
+
+volumes:
+    redis-data:
+
+networks:
+  database:
+
+services:
+  etherpad:
+    image: fuerst/etherpad
+    restart: always
+    ports:
+      - 9001
+    environment:
+      # Use ENV variables from settings.json.docker here
+      - DB_TYPE=redis
+      - DB_HOST=redis
+      - SOFFICE=/usr/bin/soffice
+    networks:
+      - database
+
+  redis:
+    image: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+    networks:
+      - database
