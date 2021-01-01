@@ -1,3 +1,5 @@
+'use strict';
+
 const _ = require('underscore');
 const cookieParser = require('cookie-parser');
 const express = require('express');
@@ -5,9 +7,7 @@ const expressSession = require('express-session');
 const fs = require('fs');
 const hooks = require('../../static/js/pluginfw/hooks');
 const log4js = require('log4js');
-const npm = require('npm/lib/npm');
-const path = require('path');
-const sessionStore = require('../db/SessionStore');
+const SessionStore = require('../db/SessionStore');
 const settings = require('../utils/Settings');
 const stats = require('../stats');
 const util = require('util');
@@ -17,8 +17,19 @@ let serverName;
 
 exports.server = null;
 
+const closeServer = async () => {
+  if (exports.server == null) return;
+  logger.info('Closing HTTP server...');
+  await Promise.all([
+    util.promisify(exports.server.close.bind(exports.server))(),
+    hooks.aCallAll('expressCloseServer'),
+  ]);
+  exports.server = null;
+  logger.info('HTTP server closed');
+};
+
 exports.createServer = async () => {
-  console.log("Report bugs at https://github.com/ether/etherpad-lite/issues")
+  console.log('Report bugs at https://github.com/ether/etherpad-lite/issues');
 
   serverName = `Etherpad ${settings.getGitCommit()} (https://etherpad.org)`;
 
@@ -26,7 +37,7 @@ exports.createServer = async () => {
 
   await exports.restartServer();
 
-  if (settings.ip === "") {
+  if (settings.ip === '') {
     // using Unix socket for connectivity
     console.log(`You can access your Etherpad instance using the Unix socket at ${settings.port}`);
   } else {
@@ -36,32 +47,32 @@ exports.createServer = async () => {
   if (!_.isEmpty(settings.users)) {
     console.log(`The plugin admin page is at http://${settings.ip}:${settings.port}/admin/plugins`);
   } else {
-    console.warn("Admin username and password not set in settings.json.  To access admin please uncomment and edit 'users' in settings.json");
+    console.warn('Admin username and password not set in settings.json. ' +
+                 'To access admin please uncomment and edit "users" in settings.json');
   }
 
   const env = process.env.NODE_ENV || 'development';
 
   if (env !== 'production') {
-    console.warn("Etherpad is running in Development mode.  This mode is slower for users and less secure than production mode.  You should set the NODE_ENV environment variable to production by using: export NODE_ENV=production");
+    console.warn('Etherpad is running in Development mode. This mode is slower for users and ' +
+                 'less secure than production mode. You should set the NODE_ENV environment ' +
+                 'variable to production by using: export NODE_ENV=production');
   }
-}
+};
 
 exports.restartServer = async () => {
-  if (exports.server) {
-    console.log("Restarting express server");
-    await util.promisify(exports.server.close).bind(exports.server)();
-  }
+  await closeServer();
 
   const app = express(); // New syntax for express v3
 
   if (settings.ssl) {
-    console.log("SSL -- enabled");
+    console.log('SSL -- enabled');
     console.log(`SSL -- server key file: ${settings.ssl.key}`);
     console.log(`SSL -- Certificate Authority's certificate file: ${settings.ssl.cert}`);
 
     const options = {
-      key: fs.readFileSync( settings.ssl.key ),
-      cert: fs.readFileSync( settings.ssl.cert )
+      key: fs.readFileSync(settings.ssl.key),
+      cert: fs.readFileSync(settings.ssl.cert),
     };
 
     if (settings.ssl.ca) {
@@ -79,16 +90,16 @@ exports.restartServer = async () => {
     exports.server = http.createServer(app);
   }
 
-  app.use(function(req, res, next) {
+  app.use((req, res, next) => {
     // res.header("X-Frame-Options", "deny"); // breaks embedded pads
     if (settings.ssl) {
       // we use SSL
-      res.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+      res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 
     // Stop IE going into compatability mode
     // https://github.com/ether/etherpad-lite/issues/2547
-    res.header("X-UA-Compatible", "IE=Edge,chrome=1");
+    res.header('X-UA-Compatible', 'IE=Edge,chrome=1');
 
     // Enable a strong referrer policy. Same-origin won't drop Referers when
     // loading local resources, but it will drop them when loading foreign resources.
@@ -97,11 +108,11 @@ exports.restartServer = async () => {
     // marked with <meta name="referrer" content="no-referrer">
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
     // https://github.com/ether/etherpad-lite/pull/3636
-    res.header("Referrer-Policy", "same-origin");
+    res.header('Referrer-Policy', 'same-origin');
 
     // send git version in the Server response header if exposeVersion is true.
     if (settings.exposeVersion) {
-      res.header("Server", serverName);
+      res.header('Server', serverName);
     }
 
     next();
@@ -138,7 +149,7 @@ exports.restartServer = async () => {
 
   exports.sessionMiddleware = expressSession({
     secret: settings.sessionKey,
-    store: new sessionStore(),
+    store: new SessionStore(),
     resave: false,
     saveUninitialized: true,
     // Set the cookie name to a javascript identifier compatible string. Makes code handling it
@@ -165,19 +176,18 @@ exports.restartServer = async () => {
       //
       // reference: https://github.com/expressjs/session/blob/v1.17.0/README.md#cookiesecure
       secure: 'auto',
-    }
+    },
   });
   app.use(exports.sessionMiddleware);
 
   app.use(cookieParser(settings.sessionKey, {}));
 
-  hooks.callAll("expressConfigure", {"app": app});
+  hooks.callAll('expressConfigure', {app});
   hooks.callAll('expressCreateServer', {app, server: exports.server});
 
   await util.promisify(exports.server.listen).bind(exports.server)(settings.port, settings.ip);
 };
 
 exports.shutdown = async (hookName, context) => {
-  if (!exports.server) return;
-  await util.promisify(exports.server.close).bind(exports.server)();
+  await closeServer();
 };

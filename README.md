@@ -6,7 +6,7 @@
 ![Demo Etherpad Animated Jif](doc/images/etherpad_demo.gif "Etherpad in action")
 
 # About
-Etherpad is a real-time collaborative editor scalable to thousands of simultaneous real time users. It provides full data export capabilities, and runs on _your_ server, under _your_ control.
+Etherpad is a real-time collaborative editor [scalable to thousands of simultaneous real time users](http://scale.etherpad.org/). It provides [full data export](https://github.com/ether/etherpad-lite/wiki/Understanding-Etherpad's-Full-Data-Export-capabilities) capabilities, and runs on _your_ server, under _your_ control.
 
 **[Try it out](https://video.etherpad.com)**
 
@@ -25,7 +25,7 @@ Includes
 
 ### Quick install on Debian/Ubuntu
 ```
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
 sudo apt install -y nodejs
 git clone --branch master https://github.com/ether/etherpad-lite.git && cd etherpad-lite && bin/run.sh
 ```

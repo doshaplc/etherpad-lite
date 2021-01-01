@@ -76,6 +76,25 @@ Things in context:
 
 This hook gets called after the application object has been created, but before it starts listening. This is similar to the expressConfigure hook, but it's not guaranteed that the application object will have all relevant configuration variables.
 
+## expressCloseServer
+
+Called from: src/node/hooks/express.js
+
+Things in context: Nothing
+
+This hook is called when the HTTP server is closing, which happens during
+shutdown (see the shutdown hook) and when the server restarts (e.g., when a
+plugin is installed via the `/admin/plugins` page). The HTTP server may or may
+not already be closed when this hook executes.
+
+Example:
+
+```
+exports.expressCloseServer = async () => {
+  await doSomeCleanup();
+};
+```
+
 ## eejsBlock_`<name>`
 Called from: src/node/eejs/index.js
 
@@ -542,7 +561,7 @@ exports.handleMessage = (hookName, {message, socket}, callback) => {
     const user = socket.client.request.session.user || {};
     if (user.name) message.data.userInfo.name = user.name;
   }
-  return cb();
+  return callback();
 };
 ```
 
@@ -661,6 +680,24 @@ function _analyzeLine(alineAttrs, apool) {
 }
 ```
 
+## exportHTMLAdditionalContent
+Called from: src/node/utils/ExportHtml.js
+
+Things in context:
+
+1. padId
+
+This hook will allow a plug-in developer to include additional HTML content in
+the body of the exported HTML.
+
+Example:
+
+```
+exports.exportHTMLAdditionalContent = async (hookName, {padId}) => {
+  return 'I am groot in ' + padId;
+};
+```
+
 ## stylesForExport
 Called from: src/node/utils/ExportHtml.js
 
@@ -749,6 +786,25 @@ exports.exportHtmlAdditionalTagsWithData = function(hook, pad, cb){
   var padId = pad.id;
   cb([["color", "red"], ["color", "blue"]]);
 };
+```
+
+## exportEtherpadAdditionalContent
+Called from src/node/utils/ExportEtherpad.js and
+src/node/utils/ImportEtherpad.js
+
+Things in context: Nothing
+
+Useful for exporting and importing pad metadata that is stored in the database
+but not in the pad's content or attributes. For example, in ep_comments_page the
+comments are stored as `comments:padId:uniqueIdOfComment` so a complete export
+of all pad data to an `.etherpad` file must include the `comments:padId:*`
+records.
+
+Example:
+
+```
+// Add support for exporting comments metadata
+exports.exportEtherpadAdditionalContent = () => ['comments'];
 ```
 
 ## userLeave

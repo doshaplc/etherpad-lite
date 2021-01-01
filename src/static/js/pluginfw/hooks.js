@@ -1,7 +1,7 @@
 /* global exports, require */
 
-var _ = require("underscore");
-var pluginDefs = require('./plugin_defs');
+const _ = require('underscore');
+const pluginDefs = require('./plugin_defs');
 
 // Maps the name of a server-side hook to a string explaining the deprecation
 // (e.g., 'use the foo hook instead').
@@ -19,31 +19,29 @@ function checkDeprecation(hook) {
   const notice = exports.deprecationNotices[hook.hook_name];
   if (notice == null) return;
   if (deprecationWarned[hook.hook_fn_name]) return;
-  console.warn(`${hook.hook_name} hook used by the ${hook.part.name} plugin ` +
+  console.warn(`${hook.hook_name} hook used by the ${hook.part.plugin} plugin ` +
                `(${hook.hook_fn_name}) is deprecated: ${notice}`);
   deprecationWarned[hook.hook_fn_name] = true;
 }
 
-exports.bubbleExceptions = true
+exports.bubbleExceptions = true;
 
-var hookCallWrapper = function (hook, hook_name, args, cb) {
+const hookCallWrapper = function (hook, hook_name, args, cb) {
   if (cb === undefined) cb = function (x) { return x; };
 
   checkDeprecation(hook);
 
   // Normalize output to list for both sync and async cases
-  var normalize = function(x) {
+  const normalize = function (x) {
     if (x === undefined) return [];
     return x;
-  }
-  var normalizedhook = function () {
-    return normalize(hook.hook_fn(hook_name, args, function (x) {
-      return cb(normalize(x));
-    }));
-  }
+  };
+  const normalizedhook = function () {
+    return normalize(hook.hook_fn(hook_name, args, (x) => cb(normalize(x))));
+  };
 
   if (exports.bubbleExceptions) {
-      return normalizedhook();
+    return normalizedhook();
   } else {
     try {
       return normalizedhook();
@@ -51,32 +49,32 @@ var hookCallWrapper = function (hook, hook_name, args, cb) {
       console.error([hook_name, hook.part.full_name, ex.stack || ex]);
     }
   }
-}
+};
 
 exports.syncMapFirst = function (lst, fn) {
-  var i;
-  var result;
+  let i;
+  let result;
   for (i = 0; i < lst.length; i++) {
-    result = fn(lst[i])
+    result = fn(lst[i]);
     if (result.length) return result;
   }
   return [];
-}
+};
 
 exports.mapFirst = function (lst, fn, cb, predicate) {
   if (predicate == null) predicate = (x) => (x != null && x.length > 0);
-  var i = 0;
+  let i = 0;
 
   var next = function () {
     if (i >= lst.length) return cb(null, []);
-    fn(lst[i++], function (err, result) {
+    fn(lst[i++], (err, result) => {
       if (err) return cb(err);
       if (predicate(result)) return cb(null, result);
       next();
     });
-  }
+  };
   next();
-}
+};
 
 // Calls the hook function synchronously and returns the value provided by the hook function (via
 // callback or return value).
@@ -121,7 +119,7 @@ function callHookFnSync(hook, context) {
     if (outcome != null) {
       // It was already settled, which indicates a bug.
       const action = err == null ? 'resolve' : 'reject';
-      const msg = (`DOUBLE SETTLE BUG IN HOOK FUNCTION (plugin: ${hook.part.name}, ` +
+      const msg = (`DOUBLE SETTLE BUG IN HOOK FUNCTION (plugin: ${hook.part.plugin}, ` +
                    `function name: ${hook.hook_fn_name}, hook: ${hook.hook_name}): ` +
                    `Attempt to ${action} via ${how} but it already ${outcome.state} ` +
                    `via ${outcome.how}. Ignoring this attempt to ${action}.`);
@@ -135,7 +133,7 @@ function callHookFnSync(hook, context) {
     }
     outcome = {state, err, val, how};
     if (val && typeof val.then === 'function') {
-      console.error(`PROHIBITED PROMISE BUG IN HOOK FUNCTION (plugin: ${hook.part.name}, ` +
+      console.error(`PROHIBITED PROMISE BUG IN HOOK FUNCTION (plugin: ${hook.part.plugin}, ` +
                     `function name: ${hook.hook_fn_name}, hook: ${hook.hook_name}): ` +
                     'The hook function provided a "thenable" (e.g., a Promise) which is ' +
                     'prohibited because the hook expects to get the value synchronously.');
@@ -170,7 +168,7 @@ function callHookFnSync(hook, context) {
   if (val === undefined) {
     if (outcome != null) return outcome.val; // Already settled via callback.
     if (hook.hook_fn.length >= 3) {
-      console.error(`UNSETTLED FUNCTION BUG IN HOOK FUNCTION (plugin: ${hook.part.name}, ` +
+      console.error(`UNSETTLED FUNCTION BUG IN HOOK FUNCTION (plugin: ${hook.part.plugin}, ` +
                     `function name: ${hook.hook_fn_name}, hook: ${hook.hook_name}): ` +
                     'The hook function neither called the callback nor returned a non-undefined ' +
                     'value. This is prohibited because it will result in freezes when a future ' +
@@ -261,7 +259,7 @@ async function callHookFnAsync(hook, context) {
       if (outcome != null) {
         // It was already settled, which indicates a bug.
         const action = err == null ? 'resolve' : 'reject';
-        const msg = (`DOUBLE SETTLE BUG IN HOOK FUNCTION (plugin: ${hook.part.name}, ` +
+        const msg = (`DOUBLE SETTLE BUG IN HOOK FUNCTION (plugin: ${hook.part.plugin}, ` +
                      `function name: ${hook.hook_fn_name}, hook: ${hook.hook_name}): ` +
                      `Attempt to ${action} via ${how} but it already ${outcome.state} ` +
                      `via ${outcome.how}. Ignoring this attempt to ${action}.`);
@@ -350,11 +348,9 @@ async function callHookFnAsync(hook, context) {
 exports.aCallAll = async (hookName, context, cb) => {
   if (context == null) context = {};
   const hooks = pluginDefs.hooks[hookName] || [];
-  let resultsPromise = Promise.all(hooks.map((hook) => {
-    return callHookFnAsync(hook, context)
-        // `undefined` (but not `null`!) is treated the same as [].
-        .then((result) => (result === undefined) ? [] : result);
-  })).then((results) => _.flatten(results, 1));
+  let resultsPromise = Promise.all(hooks.map((hook) => callHookFnAsync(hook, context)
+  // `undefined` (but not `null`!) is treated the same as [].
+      .then((result) => (result === undefined) ? [] : result))).then((results) => _.flatten(results, 1));
   if (cb != null) resultsPromise = resultsPromise.then((val) => cb(null, val), cb);
   return await resultsPromise;
 };
@@ -362,49 +358,45 @@ exports.aCallAll = async (hookName, context, cb) => {
 exports.callFirst = function (hook_name, args) {
   if (!args) args = {};
   if (pluginDefs.hooks[hook_name] === undefined) return [];
-  return exports.syncMapFirst(pluginDefs.hooks[hook_name], function(hook) {
-    return hookCallWrapper(hook, hook_name, args);
-  });
-}
+  return exports.syncMapFirst(pluginDefs.hooks[hook_name], (hook) => hookCallWrapper(hook, hook_name, args));
+};
 
 function aCallFirst(hook_name, args, cb, predicate) {
   if (!args) args = {};
   if (!cb) cb = function () {};
   if (pluginDefs.hooks[hook_name] === undefined) return cb(null, []);
   exports.mapFirst(
-    pluginDefs.hooks[hook_name],
-    function (hook, cb) {
-      hookCallWrapper(hook, hook_name, args, function (res) { cb(null, res); });
-    },
-    cb,
-    predicate
+      pluginDefs.hooks[hook_name],
+      (hook, cb) => {
+        hookCallWrapper(hook, hook_name, args, (res) => { cb(null, res); });
+      },
+      cb,
+      predicate
   );
 }
 
 /* return a Promise if cb is not supplied */
 exports.aCallFirst = function (hook_name, args, cb, predicate) {
   if (cb === undefined) {
-    return new Promise(function(resolve, reject) {
-      aCallFirst(hook_name, args, function(err, res) {
-	return err ? reject(err) : resolve(res);
-      }, predicate);
+    return new Promise((resolve, reject) => {
+      aCallFirst(hook_name, args, (err, res) => err ? reject(err) : resolve(res), predicate);
     });
   } else {
     return aCallFirst(hook_name, args, cb, predicate);
   }
-}
+};
 
-exports.callAllStr = function(hook_name, args, sep, pre, post) {
+exports.callAllStr = function (hook_name, args, sep, pre, post) {
   if (sep == undefined) sep = '';
   if (pre == undefined) pre = '';
   if (post == undefined) post = '';
-  var newCallhooks = [];
-  var callhooks = exports.callAll(hook_name, args);
-  for (var i = 0, ii = callhooks.length; i < ii; i++) {
+  const newCallhooks = [];
+  const callhooks = exports.callAll(hook_name, args);
+  for (let i = 0, ii = callhooks.length; i < ii; i++) {
     newCallhooks[i] = pre + callhooks[i] + post;
   }
-  return newCallhooks.join(sep || "");
-}
+  return newCallhooks.join(sep || '');
+};
 
 exports.exportedForTestingOnly = {
   callHookFnAsync,
