@@ -1,3 +1,5 @@
+Customized ehterpad to fit specific need and with some plugins
+
 # A real-time collaborative editor for the web
 <a href="https://hub.docker.com/r/etherpad/etherpad"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/etherpad/etherpad"></a>
 
